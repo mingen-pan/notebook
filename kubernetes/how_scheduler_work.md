@@ -36,9 +36,11 @@ func NewSchedulerCommand(registryOptions ...Option) *cobra.Command {
 		},
 	}
 }
+```
 
 Below is the implementation of `Run` command:
 
+```go
 func runCommand(cmd *cobra.Command, args []string, opts *options.Options, registryOptions ...Option) error {
 
     // some logic
@@ -63,7 +65,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 ## Make Scheduler listen to Pod and Node Events
 When a scheduler is `New`-ed and deployed, it needs to listen to `pod` and `node` events to make sure they are well scheduler. A scheduler uses resource informers to receive events on `pod` and `node`.
 
-`AddAllEventHandlers` injects the handler of scheduler into resource (`pod` and `node` ) listeners.
+`AddAllEventHandlers` injects the handler of scheduler into resource (`pod` and `node` ) informer.
 
 ```go
 // pkg/scheduler/scheduler.go
@@ -110,7 +112,7 @@ func (sched *Scheduler) addPodToSchedulingQueue(obj interface{}) {
 
 ## Scheduler workflow in Kubernetes
 
-When a scheduler is run, it continually pops the pods from its priority queue. At the same, as shown above, the priority queue will be pushed pods when a pod listener receive pod events regarding `create` and `update`. 
+When a scheduler is run, it continually pops the pods from its `priority queue`. At the same time, as shown above, the `priority queue` will be pushed `pod`s when a `pod` listener receive pod events regarding `create` and `update`. 
 
 ```go
 // pkg/scheduler/scheduler.go
