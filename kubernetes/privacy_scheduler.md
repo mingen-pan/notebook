@@ -1,7 +1,7 @@
 This is a proposal regarding how to use Kubernetes to assign privacy resources to data-processing pipelines. 
 
 
-## Privacy: Entity or Scaler?
+## Privacy: Entity or Scalar?
 Sometimes it is hard to consider to consider privacy as a resource, like CPU and Memory. We can just point to an object and tell people "this is a privacy". However, differential privacy (DP) provides a metric to calculate the privacy leakage. The more you leak, the less privacy you have. Thus, we can use the metric from differential privacy to quantify a privacy resource. In this case, `privacy` looks like a scalar. 
 
 The traditional DP only considers on static databases. Lécuyer et al. (2019) proposes a new framework to deal with the DP of datastream. Instead of considering every data as a whole set, they partition the datastream into blocks. Queries on datastream can choose which block(s) to consume. The framework accounts the DP of each data block instead of the whole datastream. In this scenario, it is intuitive to consider each data block as an entity (with the metric of available privacy) and assign them to queries. In this scenario, it seems privacy can be treated as entities.
