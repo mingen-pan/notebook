@@ -1,0 +1,21 @@
+apiVersion: "columbia.github.com/v1"
+kind: PrivateDataBlock
+metadata:
+  name: block-1
+  namespace: privacy-example
+spec:
+  startTime: 0
+  endTime: 100
+  dataset: "taxi-db"
+  dataSource: "www.columbia.edu/db/1"
+  budget:
+    epsilon: 1
+    delta: 1
+  podMap: {"pod1": 0.5, "pod2": 0.3}
+#    pod1: 0.5
+#    pod2: 0.3
+status:
+  availableBudget:
+    epsilon: 1
+    delta: 1
+  podBudgetMap: {"pod1": 0.5, "pod2": 0.3}
