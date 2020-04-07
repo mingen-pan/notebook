@@ -311,12 +311,7 @@ Once an application consumes a data block with some privacy budget, it should co
 The API server extension handles the "Consume" request in this way:
 
 ```go
-type Request struct {
-    PodNmae  string,
-    Budget   PrivacyBudget,
-}
-
-func RequestPrivacyBudget(block *columbiav1.PrivateDataBlock, request *Request) {
+func Consume(block *columbiav1.PrivateDataBlock, request *Request) {
     block = snapshot(block)
     budget := block.Status.LockedBudgetMap[request.PodNmae]
     
@@ -353,7 +348,7 @@ Similar to consuming the requested privacy budget, an application can release it
 The API server extension handles the Release API request like 
 
 ```go
-func RequestPrivacyBudget(block *columbiav1.PrivateDataBlock, request *Request) {
+func Release(block *columbiav1.PrivateDataBlock, request *Request) {
     block = snapshot(block)
     budget := block.Status.LockedBudgetMap[request.PodNmae]
     availableBudget := block.Status.AvailableBudget
