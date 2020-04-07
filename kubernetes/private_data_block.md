@@ -206,8 +206,8 @@ func init() {
 }
 ```
 
-### Request Privacy Budget from Private Data Block
-If an application needs more privacy budget from a private data block, it can send a request to `privatedatablocks/<block_name>/request` to request more privacy. The request looks like:
+### Acquire Privacy Budget from Private Data Block
+If an application needs more privacy budget from a private data block, it can send a request to `privatedatablocks/<block_name>/request` to acquire more privacy budget. The acquired privacy is locked by the private data block until further actions (consume or release) are received to handle it. The request looks like:
 
 ```json
 {
@@ -218,7 +218,7 @@ If an application needs more privacy budget from a private data block, it can se
   }
 }
 ```
-API server extension receives the request and handles it. The logic of to handle Requesting Privacy looks like:
+API server extension receives the "Acquire" request and handles it. The logic of to handle the request looks like:
 
 ```go
 type Request struct {
@@ -226,7 +226,7 @@ type Request struct {
     Budget   PrivacyBudget,
 }
 
-func RequestPrivacyBudget(block *columbiav1.PrivateDataBlock, request *Request) {
+func Acquire(block *columbiav1.PrivateDataBlock, request *Request) {
     block = snapshot(block)
     budget := block.Status.LockedBudgetMap[request.PodNmae]
     availableBudget := block.Status.AvailableBudget
@@ -249,17 +249,17 @@ func RequestPrivacyBudget(block *columbiav1.PrivateDataBlock, request *Request) 
     
         return true //succeed
     } else {
-        return false //unable to request
+        return false //unable to acquire
     }
 }
 
 ```
 
-After updating the private data block, API server extension will inform the requester whether the request has succeeded or not.
+After updating the private data block, API server extension will inform the requester whether the Acquire has succeeded or not.
 
 
 ### Scheduling Private Data Blocks to Pod
-A scheduler is built to bind pods (a pod is basically a standalone application) with private data blocks. When a new pod is created, the scheduler finds suitable private data block based on the requirement of the pod, and bind the blocks to this pod. Also, when a new data block is created, it will be bound to the pods that are still hungry for data. The binding process is a combination of calling the Request APIs of multiple data blocks.
+A scheduler is built to bind pods (a pod is basically a standalone application) with private data blocks. When a new pod is created, the scheduler finds suitable private data block based on the requirement of the pod, and bind the blocks to this pod. Also, when a new data block is created, it will be bound to the pods that are still hungry for data. The binding process is a combination of calling the Acquire APIs of multiple data blocks.
 
 ```go
 func Bind(pod *corev1.Pod, blocks []*columbiav1.PrivateDataBlock) {
@@ -270,8 +270,8 @@ func Bind(pod *corev1.Pod, blocks []*columbiav1.PrivateDataBlock) {
     budget = getRequiredBudget(pod)
     lockedBlocks := make([]*columbiav1.PrivateDataBlock)
     for _, block := range blocks {
-        res := privateDataBlockClient.ColumbiaV1().PrivateDataBlocks().
-        		Request(
+        res := privateDataBlockClient.Acquire(
+                    block: block,
                     podName: pod.Name
                     budget: budget
                 )
