@@ -112,9 +112,11 @@ Now, Instead of querying the whole or half the dataset, could I only sample one 
 
 Clearly, some step above is wrong, but I cannot find out where.
 
-Another similar example: Even I add a new constraint that the DP-guarantee of a query cannot exceed the privacy budget of a dataset. That is, if the dataset has $\epsilon$ privacy budget, the query on it cannot be weaker than $\epsilon$-DP. Under this constraint, I query the dataset twice and sample half of the data per query. It seems that the $\epsilon$-DP is not violated. However, 1/4 of the dataset will be queried twice and their privacy loss is  $2 \epsilon$. If the query is MAX and the maximum value is in that 1/4, the MAX result should break the $\epsilon$-DP.
+Another more practical example: even I add a new constraint that the DP-guarantee of a sampling query cannot exceed the privacy budget of a dataset. That is, if the dataset has $\epsilon$ privacy budget, the query on it cannot be weaker than $\epsilon$-DP. Under this constraint, I query the dataset twice and sample half of the data per query. It seems that the $\epsilon$-DP is not violated. However, 1/4 of the dataset will be queried twice and their privacy loss is  $2 \epsilon$. If the query is MAX and the maximum value is in that 1/4, the MAX result should break the $\epsilon$-DP.
 
-It seems to me that randomly sampling an entry from a dataset with distinctive values can maintain (1/n, 1/n)-DP. However, the detail of the sampled entry is definitely leaked, because there is no noise adding to it.
+### Indivdual Sampling yields (1/n, 1/n)-DP naturally?
+
+It seems to me that randomly sampling an entry from a dataset whose values are distinctive can maintain (1/n, 1/n)-DP. However, the detail of the sampled entry is definitely leaked, because there is no noise adding to it.
 
 Define $M$ is the random sampling process, $x$ is a dataset with $n$ distinctive members, and $y$ is another dataset with one more member than $x$. Also, the new member is different from the other members. Thus $|y-x| = 1$. I also define that $S$ is an query result, whose range is $x \cup y$. $S_x$ represents a member belonging to both $x$ and $y$, and $S_y$ is the new member of $y$.
 
