@@ -20,12 +20,6 @@ $$Pr(Q(m) = 1) \geq \frac{1}{2},$$
 which reflects the meaning of $m$. 
 
 
-\begin{align}
-    g &= \int_a^b f(x)dx \tag{1}\\
-    a &= b + c 
-\end{align}
-
-
 ## Theorems
 
 **Theorem 1.** $x$ is a scalar variable, and $f(x)$ is a monotonically decreasing function. If 
@@ -108,57 +102,72 @@ Combining Ineq. (14), (15), and (16) yields (5). Given Theorem 1., the lemma is 
 ## Sigmoid Implmentation
 
 
-## Cutoff Exponential Implementation
+## 5. Cutoff Exponential Implementation
+
+This implementation has the basic idea: if total counting $N$ equals or larger than $m$, then the decision should always yield `True`. That is
+
+\begin{align}
+    Pr(Q(N \geq m) = 1) = 1. \tag{5.1} 
+\end{align}
 
 
-$$ Pr(Q(m) = 1) = 1 $$
+Also when $N < m$, the implementation needs to provide a $\epsilon$-DP guarantee, so the probability of yielding `True` should maintain a relationship like
 
-$$ Pr(Q(N) = 1) = e^{\epsilon} Pr(Q(N - 1) = 1) $$
-
-Given $N <= m$,
-
-$$ Pr(Q(N) = 1) = e^{\epsilon (N - m)}$$
-
-$$ Pr(Q(N) = 0) = 1 - e^{\epsilon (N - m)}$$
-
-Apparently, 
+\begin{align}
+    Pr(Q(N) = 1) = e^{\epsilon} Pr(Q(N - 1) = 1). \tag{5.2} 
+\end{align}
 
 
-$$Pr(Q(N+1) = 1) \leq e^{\epsilon} Pr(Q(N) = 1) + 1 - e^{-\epsilon}$$
+Combine (5.1) and (5.2), we can get for every $N \leq m$,
 
-is always True by the definition. Switching LHS and RHS is also correct, because $Pr(Q(N) = 1)$ is always smaller than $Pr(Q(N + 1) = 1)$.
+\begin{align}
+    Pr(Q(N) = 1) = e^{\epsilon (N - m)}, \tag{5.3}\\
+    Pr(Q(N) = 0) = 1 - e^{\epsilon (N - m)}. \tag{5.4}
+\end{align}
+
+When $N = m$, 
+
+\begin{align}
+    Pr(Q(m-1) = 0) \leq e^{\epsilon} Pr(Q(m) = 0) + \delta, \tag{5.5}\\ 
+    \Rightarrow 1 - e^{-\epsilon} \leq e^{\epsilon} * 0 + \delta. \tag{5.6}
+\end{align}
+
+Thus the minimum of $\delta$ is $1 - e^{-\epsilon}$. Given the minimum $\delta$ and (5.2), 
+
+\begin{align}
+    Pr(Q(N+1) = 1) \leq e^{\epsilon} Pr(Q(N) = 1) + 1 - e^{-\epsilon}\tag{5.7}
+\end{align}
+
+is always correct by the definition. Switching LHS and RHS is also correct, because $Pr(Q(N) = 1)$ is always smaller than $Pr(Q(N + 1) = 1)$.
 
 Now the question becomes proving the correctness of
 
 \begin{align}
-    Pr(Q(N) = 0) \leq e^{\epsilon} Pr(Q(N+1) = 0) + 1 - e^{-\epsilon}.
+    Pr(Q(N) = 0) \leq e^{\epsilon} Pr(Q(N+1) = 0) + 1 - e^{-\epsilon} \tag{5.8}
 \end{align}
 
-First, let's prove 
+
+for every $N < m$. Given $Pr(Q(N) = 0)$ is a monotonically decreasing and the proof of (5.5), if we can prove 
 
 \begin{align}
-    Pr(Q(m - 1) = 0) \leq e^{\epsilon} Pr(Q(m) = 0) + 1 - e^{-\epsilon}.
+    \frac{d}{dx}Pr(Q(x=a) = 0) \geq \frac{d}{dx}Pr(Q(x=b) = 0), \tag{5.9}
 \end{align}
 
-LHS = $1 - e^{-\epsilon}$ and RHS = $e^{\epsilon} * 0 + 1 - e^{-\epsilon} = 1 - e^{-\epsilon}$, so LHS = RHS, and (X) is proved.
-
-
-Given $Pr(Q(N) = 0)$ is a monotonically decreasing, and (X), if we can prove 
-
-\begin{align}
-    \frac{d}{dx}Pr(Q(x=a) = 0) \geq \frac{d}{dx}Pr(Q(x=b) = 0),
-\end{align}
-
-where $a + 1 \leq b$, then the Lemma 1. could lead to the correctness of Ineq. (X).
+where $a + 1 \leq b$, then the Lemma 1. could lead to the proof of Ineq. (5.8).
 
 For simplicity, define $f(x) = Pr(Q(x) = 0)$, then
 
 \begin{align}
-    f'(x) = \frac{d}{dx} (1 - e^{\epsilon (x - m)}),\\
-    \Rightarrow f'(x) = - e^{-\epsilon m} \frac{d}{dx}  e^{\epsilon x} = - e^{-\epsilon m} \epsilon e^{\epsilon x}.\\
+    f'(x) = \frac{d}{dx} (1 - e^{\epsilon (x - m)}), \tag{5.10}\\
+    \Rightarrow f'(x) = - e^{-\epsilon m} \frac{d}{dx}  e^{\epsilon x} = - e^{-\epsilon m} \epsilon e^{\epsilon x}. \tag{5.11}
 \end{align}
 
-Since $f'(x)$ is apparently a monotonically decreasing function, Ineq. (X) is proved. Therefore, Ineq (X) and (X) are proved accordingly. Therefore, this implementation provides ($\epsilon, 1 - e^{-\epsilon}$)-DP guarantee.
+Since $f'(x)$ is apparently a monotonically decreasing function, Ineq. (5.9) is proved. Ineq (5.8) is proved accordingly. Therefore, this Cutoff Exponential Implementation provides ($\epsilon, 1 - e^{-\epsilon}$)-DP guarantee.
+
+### Cutoff at small N
+(under development)
+
+When $N$ is small, $Pr(Q(N)=1)$ could also be set to be zero without breaking the ($\epsilon, 1 - e^{-\epsilon}$)-DP guarantee.
 
 
 
