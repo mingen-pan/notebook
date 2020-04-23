@@ -33,14 +33,14 @@ and $a < b$, and that
 
 
 \begin{align}
-   f(b) \leq m f(b+1) + n, \tag{6}
+   f(b) \leq \epsilon f(b+1) + \delta, \tag{6}
 \end{align}
 
-where $m \geq 1$ and $n \geq 0$, then
+where $\epsilon \geq 1$ and $\delta \geq 0$, then
 
 
 \begin{align}
-   f(a) \leq m f(a+1) + n \tag{7}
+   f(a) \leq \epsilon f(a+1) + \delta \tag{7}
 \end{align}
 
 is also guaranteed.
@@ -51,20 +51,20 @@ is also guaranteed.
 Modify the Ineq. (6) as
 
 \begin{align}
-    f(b) - f(b+1) \leq (m - 1) f(b+1) + n. \tag{8}
+    f(b) - f(b+1) \leq (\epsilon - 1) f(b+1) + \delta. \tag{8}
 \end{align}
 
-Since $m - 1 \geq 0$ and $f(b+1) \leq f(a+1)$,
+Since $\epsilon - 1 \geq 0$ and $f(b+1) \leq f(a+1)$,
 
 \begin{align}
-    (m - 1) f(b+1) + n \leq (m - 1) f(a+1) + n. \tag{9}
+    (\epsilon - 1) f(b+1) + \delta \leq (\epsilon - 1) f(a+1) + \delta. \tag{9}
 \end{align}
 
 Combine Ineq.(5), (8) and (9),
 
 \begin{align}
-    f(a) - f(a+1) \leq (m - 1) f(a+1) + n \tag{10} \\
-    \Rightarrow f(a) \leq m f(a+1) + n. \tag{11}
+    f(a) - f(a+1) \leq (\epsilon - 1) f(a+1) + \delta \tag{10} \\
+    \Rightarrow f(a) \leq \epsilon f(a+1) + \delta. \tag{11}
 \end{align}
 
 **Lemma 1.** If $x$ is a scalar variable and $f(x)$ is a monotonically decreasing and derivable function, and that 
@@ -99,8 +99,54 @@ Given $a < \xi_{a} < a + 1 \leq b < \xi_{b} < b + 1$, Ineq. (12) becomes
 
 Combining Ineq. (14), (15), and (16) yields (5). Given Theorem 1., the lemma is proved.
 
-## Sigmoid Implmentation
+## 4. Laplace Noise Decision
 
+The decision should count the total number of data, add a Laplace noise to the counting to achieve DP, and compare the result with a value. If the result is larger  than or equals the value, the decision return `True`, else `False`.
+
+\begin{align}
+    Q(N) = N + L(\frac{1}{\epsilon}) \geq k, \tag{4.1}\\
+\end{align}
+
+where $N$ is the total counting, $L$ is the Laplace noise, and $k$ is a constant, which is a function of the minimum number of data $m$ in practice. Since Laplace mechanism has already provided ($\epsilon, \delta$)-DP, there is no need to justify this implementation.
+
+Now, I am going to calculate the $Pr(Q(N)=1)$. The PDF of $L(\frac{1}{\epsilon})$ is
+
+\begin{align}
+    L(x|\frac{1}{\epsilon}) = \frac{\epsilon}{2} e^{-\epsilon |x|}, \tag{4.1}
+\end{align}
+
+if $N < k$,
+
+\begin{align}
+    Pr(N + L(\frac{1}{\epsilon}) \geq k) = \int_{k-N}^{\infty} \frac{\epsilon}{2} e^{-\epsilon x}, \\
+    = -\frac{\epsilon}{2} e^{-\epsilon x} |_{k-N}^{\infty}=\frac{1}{2}e^{\epsilon (N-k)}, \tag{4.2}
+\end{align}
+
+Similarly, if $N \geq k$,
+
+\begin{align}
+    Pr(N + L(\frac{1}{\epsilon}) \geq k) =\frac{1}{2} + \int_{k-N}^{0} \frac{\epsilon}{2} e^{\epsilon x}, \\
+    = 1 - \frac{1}{2} e^{\epsilon (k-N)}. \tag{4.3}
+\end{align}
+
+
+If $k=m$, then $Pr(Q(m) = 1) = \frac{1}{2}$. If we want $Pr(Q(m) = 1) = p > \frac{1}{2}$, then $k$ should be smaller than $m$. Based on Eq. (4.3), 
+
+\begin{align}
+    1 - \frac{1}{2} e^{\epsilon (k-m)} = p, \tag{4.4}\\
+    k = m + \frac{\ln[2(1-p)]}{\epsilon}. \tag{4.5}
+\end{align}
+
+If $p=0.99$ and $\epsilon = 10^{-3}$, then $k = m - 3912$.
+
+If we prefer a conservative strategy, i.e. $Pr(Q(m) = 1) = p < \frac{1}{2}$, similarly we have
+
+\begin{align}
+    \frac{1}{2} e^{\epsilon (m-k)} = p, \tag{4.6}\\
+    k = m - \frac{\ln(2p)}{\epsilon}. \tag{4.7}
+\end{align}
+
+If $p=0.01$ and $\epsilon = 10^{-3}$, then $k = m + 3912$. It can be found that there is an interval of around 8000 between the positions of $p=0.01$ and $p=0.99$ when $\epsilon = 10^{-3}$. That is to say, if I set the minimum requirement of 100,000 data, $\epsilon = 10^{-3}$, and choose a conservative strategy, the dataset needs to have more than 108,000 data to ensure the decision can give `True` with the probability higher than 99%.
 
 ## 5. Cutoff Exponential Implementation
 
@@ -164,12 +210,158 @@ For simplicity, define $f(x) = Pr(Q(x) = 0)$, then
 
 Since $f'(x)$ is apparently a monotonically decreasing function, Ineq. (5.9) is proved. Ineq (5.8) is proved accordingly. Therefore, this Cutoff Exponential Implementation provides ($\epsilon, 1 - e^{-\epsilon}$)-DP guarantee.
 
-### Cutoff at small N
-(under development)
+## 6. Generalized Laplace Noise Decision
 
-When $N$ is small, $Pr(Q(N)=1)$ could also be set to be zero without breaking the ($\epsilon, 1 - e^{-\epsilon}$)-DP guarantee.
+Laplace noise is pure $\epsilon$-DP. What about users want to utilize some budget of $\delta$. This section will start from the definition of DP and derive a general model. Laplace Noise Decision is found to be a special case of this model. 
+
+Here is the derivation of the model. $Q$ is the stochastic decision, and $f(n) = Pr(Q(m) = 1)$. If $f(n)$ is monotonically increasing, based on the definition of DP, we have:
 
 
+\begin{align}
+    f(n) \leq e^{\epsilon} f(n-1) + \delta, \tag{6.1}\\
+    1 - f(n-1) \leq e^{\epsilon} (1 - f(n)) + \delta \tag{6.2}
+\end{align}
 
+Move $f(n-1)$ to one side,
+
+\begin{align}
+    (f(n) - \delta) e^{-\epsilon} \leq  f(n-1), \tag{6.3}\\
+    1 - \delta - e^{\epsilon} (1 - f(n)) \leq f(n-1)  \tag{6.4}.
+\end{align}
+
+Therefore,
+
+\begin{align}
+    \min f(n-1) = \max [(f(n) - \delta) e^{-\epsilon}, 1 - \delta - e^{\epsilon} (1 - f(n))]. \tag{6.5}
+\end{align}
+
+Define 
+
+\begin{align}
+    g(p) = [(p - \delta) e^{-\epsilon}] - [1 - \delta - e^{\epsilon} (1 - p)] \\
+    = (p - \delta) e^{-\epsilon} - 1 + \delta + e^{\epsilon} (1 - p), \tag{6.6}
+\end{align}
+
+where $p = f(n) \in [0, 1]$. Set $p=1$,
+
+\begin{align}
+    g(1) = (1 - \delta)e^{-\epsilon} - 1 + \delta = (1 - \delta)(e^{-\epsilon} - 1) \leq 0, \tag{6.7}
+\end{align}
+
+given $\epsilon \geq 0$ and $\delta \leq 1$. Also set $p=0$,
+
+\begin{align}
+    g(0) = - \delta e^{-\epsilon} - 1 + \delta + e^{\epsilon} = \delta (1 - e^{-\epsilon}) + e^{\epsilon} - 1 \geq 0, \tag{6.8}
+\end{align}
+
+given $1 - e^{-\epsilon} \leq 0$ and $e^{\epsilon} - 1 \geq 0$.
+
+Also given 
+
+\begin{align}
+    g'(p) = e^{-\epsilon} - e^{\epsilon} \leq 0 \tag{6.9},
+\end{align}
+
+$g(p)$ should have one and only one root when $p \in [0, 1]$. The root $p_0$ can be computed to be
+
+\begin{align}
+    p_0 = \frac{e^{\epsilon} - 1 + \delta(1 - e^{-\epsilon})}{e^{\epsilon} - e^{-\epsilon}}. \tag{6.10}
+\end{align}
+
+That is to say, when $f(n) > p$, LHS of (6.4) is always larger than the LHS of (6.3), vice versa, i.e. the solution of f(n) maintaining DP is derived to be
+
+\begin{align}
+    f(n-1) = (f(n) - \delta) e^{-\epsilon}, \text{ when } f(n) \leq p_0 \tag{6.11}\\
+    f(n-1) = 1 - \delta - e^{\epsilon} (1 - f(n)),\text{ when } f(n) > p_0 \tag{6.12}.
+\end{align}
+
+Now, let's solve (6.11). First, construct a relation:
+
+\begin{align}
+    \frac{f(n-1) - b}{f(n) - b} = a. \tag{6.13}\\
+\end{align}
+
+It expands to be
+
+\begin{align}
+    f(n-1) = a f(n) + b(1-a) \tag{6.14}.\\
+\end{align}
+
+Modify (6.11)
+
+\begin{align}
+    f(n-1) = e^{-\epsilon} f(n) - \delta e^{-\epsilon}  \tag{6.15},\\
+\end{align}
+
+we get 
+
+\begin{align}
+    a = e^{-\epsilon},\\
+    b = \frac{-\delta e^{-\epsilon}}{1 - e^{-\epsilon}} \tag{6.16}.
+\end{align}
+
+Then if $n < n_0$ and $f(n_0) = p_0$,
+
+\begin{align}
+    \frac{f(n) - b}{f(n_0) - b} = a^{n_0-n}, \tag{6.17}\\
+    \Rightarrow f(n) = e^{\epsilon (n-n_0)} (p_0 - \frac{-\delta e^{-\epsilon}}{1 - e^{-\epsilon}}) + \frac{-\delta e^{-\epsilon}}{1 - e^{-\epsilon}}. \tag{6.18}
+\end{align}
+
+Now, let's solve (6.12). First construct a relation:
+
+\begin{align}
+    \frac{f(n+2) - d}{f(n) - d} = c. \tag{6.19}\\
+\end{align}
+
+It expands to
+
+\begin{align}
+    f(n+2) = c f(n) + d(1-c) \tag{6.20}.\\
+\end{align}
+
+Modify (6.12) and substitute $n$ and $n+1$
+
+\begin{align}
+    e^{-\epsilon} f(n+1) = e^{-2\epsilon} f(n) + e^{-\epsilon} - e^{-2\epsilon} (1 - \delta). \tag{6.21} \\
+    f(n+2) = e^{-\epsilon} f(n+1) + 1 - e^{-\epsilon} (1 - \delta). \tag{6.22} \\
+\end{align}
+
+Add (6.21) and (6.22)
+
+\begin{align}
+    f(n+2) = e^{-2\epsilon} f(n) + [1 - e^{-\epsilon} (1 - \delta)] (1 + e^{-\epsilon}). \tag{6.23}
+\end{align}
+
+we get 
+
+\begin{align}
+    c = e^{-2\epsilon} \\
+    d = \frac{[1 - e^{-\epsilon} (1 - \delta)] (1 + e^{-\epsilon})}{1 - e^{-2\epsilon}}. \tag{6.24}
+\end{align}
+
+If $n > n_0$, $(n - n_0) \% 2 = 0$, and $f(n_0) = p_0$,
+
+\begin{align}
+    \frac{f(n) - d}{f(n_0) - d} = c^{(n-n_0)/2}, \tag{6.25}
+\end{align}
+
+\begin{align}
+    f(n) = e^{\epsilon (n_0 - n)} (p_0 - \frac{[1 - e^{-\epsilon} (1 - \delta)] (1 + e^{-\epsilon})}{1 - e^{-2\epsilon}}) + \frac{[1 - e^{-\epsilon} (1 - \delta)] (1 + e^{-\epsilon})}{1 - e^{-2\epsilon}}. \tag{6.26}
+\end{align}
+
+For $(n - n_0) \% 2 = 1$, first calculate $f(n_0 + 1)$. Define it as $p_1$ Based on (6.21),
+
+\begin{align}
+    p_1 = e^{-\epsilon} p_0 + 1 - e^{-\epsilon} (1 - \delta). \tag{6.27} \\
+\end{align}
+
+The general formula to calculate the $f(n)$ in this situation is similar to (6.26).
+
+
+Given a datset with 100,000 entries, set $\epsilon = 10^{-3}$ and $\delta = 10^{-3}$. From (6.10), $p_0 \approx 0.5007$. If $f(n) = 0.99$, from (6.26), we have $n - n_0$ around 400. Similarly, $n -n_0$ is around 400 if $f(n) = 0.01$. Therefore, we can sacrifice $\delta$-DP to narrow the interval between $p=0.01$ and $0.99$.
+
+### Reduce to Laplace Noise Decision
+
+If $\delta = 0$, this method is equivalent to Laplace Noise Decision. The proof is not shown here. This method is a general model of Laplace Noise Decision, and user can trade off between $\delta$ and $\epsilon$. 
 
 
